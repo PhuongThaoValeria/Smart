@@ -50,32 +50,38 @@ export function TestRunner({ test, onComplete, onCancel }: TestRunnerProps) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleAutoSubmit = () => {
+  // Wrap with useCallback to fix ESLint warning
+  const handleAutoSubmit = useCallback(() => {
     // Submit with current answers
     const correctCount = answers.filter(a => {
       const question = test.questions.find(q => q.question_id === a.question_id);
       return question && a.selected_answer.toUpperCase() === question.correct_answer.toUpperCase();
     }).length;
 
+    const totalQuestions = test.questions.length;
+
     onComplete({
       correctCount,
-      totalQuestions: test.questions.length,
-      accuracy: (correctCount / test.questions.length) * 100,
+      totalQuestions,
+      accuracy: (correctCount / totalQuestions) * 100,
       answers,
     });
-  };
+  }, [answers, test.questions, onComplete]);
 
-  const handleSubmit = async () => {
+  // Wrap with useCallback to fix ESLint warning
+  const handleSubmit = useCallback(async () => {
     // Calculate results
     const correctCount = answers.filter(a => {
       const question = test.questions.find(q => q.question_id === a.question_id);
       return question && a.selected_answer.toUpperCase() === question.correct_answer.toUpperCase();
     }).length;
 
+    const totalQuestions = test.questions.length;
+
     const results = {
       correctCount,
-      totalQuestions: test.questions.length,
-      accuracy: (correctCount / test.questions.length) * 100,
+      totalQuestions,
+      accuracy: (correctCount / totalQuestions) * 100,
       answers,
     };
 
@@ -93,9 +99,9 @@ export function TestRunner({ test, onComplete, onCancel }: TestRunnerProps) {
     }
 
     onComplete(results);
-  };
+  }, [answers, test.questions, test.test_id, onComplete]);
 
-  // Timer
+  // Timer - now includes handleAutoSubmit in dependencies
   useEffect(() => {
     if (timeRemaining <= 0) {
       handleAutoSubmit();
@@ -107,7 +113,7 @@ export function TestRunner({ test, onComplete, onCancel }: TestRunnerProps) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeRemaining]);
+  }, [timeRemaining, handleAutoSubmit]);
 
   // Reset timer for each question
   useEffect(() => {
@@ -189,7 +195,7 @@ export function TestRunner({ test, onComplete, onCancel }: TestRunnerProps) {
     } else {
       handleSubmit();
     }
-  }, [currentQuestionIndex, test.questions.length]);
+  }, [currentQuestionIndex, test.questions.length, handleSubmit]);
 
   // Keyboard support for advancing
   useEffect(() => {
@@ -209,218 +215,167 @@ export function TestRunner({ test, onComplete, onCancel }: TestRunnerProps) {
     return option.charAt(0);
   };
 
-  const getOptionText = (option: string) => {
-    // Extract the text after the letter and parenthesis
-    const match = option.match(/^[A-D]\)\s*(.+)$/);
-    return match ? match[1] : option;
+  const getOptionClass = (option: string) => {
+    if (!selectedAnswer) return "option-btn";
+
+    const isSelected = option === selectedAnswer;
+    const isCorrectOption = option.charAt(0) === currentQuestion.correct_answer;
+
+    if (showFeedback) {
+      if (isCorrectOption) return "option-btn correct";
+      if (isSelected && !isCorrectOption) return "option-btn incorrect";
+    }
+
+    if (isSelected) return "option-btn selected";
+
+    return "option-btn";
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Daily Test</h2>
-          <p className="text-gray-600">
-            Question {currentQuestionIndex + 1} of {test.questions.length}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-gray-600">
-            <Clock className={`h-5 w-5 ${timeRemaining < 60 ? 'text-red-600 animate-pulse' : ''}`} />
-            <span className={`font-mono text-lg ${timeRemaining < 60 ? 'text-red-600 font-bold' : ''}`}>
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="text-2xl">Question {currentQuestionIndex + 1} of {test.questions.length}</CardTitle>
+            <CardDescription>
+              {test.test_date} • {test.duration_minutes} minutes
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            <span className={`text-2xl font-bold ${timeRemaining < 60 ? 'text-red-600' : ''}`}>
               {formatTime(timeRemaining)}
             </span>
           </div>
-          {answers.length > 0 && (
-            <Button variant="outline" onClick={onCancel} disabled={questionTransitioning}>
-              End Test
-            </Button>
-          )}
         </div>
-      </div>
+        <Progress value={progress} className="mt-4" />
+      </CardHeader>
 
-      {/* Progress Bar */}
-      <div className="space-y-2">
-        <Progress value={progress} className="h-2" />
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>{Math.round(progress)}% complete</span>
-          <span>{answers.length} answered</span>
-        </div>
-      </div>
-
-      {/* Question Card with Fade Animation */}
-      <div className={`transition-opacity duration-200 ${fadeState === 'out' ? 'opacity-0' : 'opacity-100'}`}>
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <CardTitle className="text-xl leading-relaxed">
-                  {currentQuestion.question_text}
-                </CardTitle>
-                <CardDescription className="mt-3">
-                  <Badge variant="outline" className="mr-2">{currentQuestion.concept_name}</Badge>
-                  <Badge variant="outline">{currentQuestion.difficulty}</Badge>
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {currentQuestion.options.map((option) => {
-                const letter = getOptionLabel(option);
-                const isSelected = selectedAnswer === letter;
-                const isCorrectOption = letter === currentQuestion.correct_answer;
-
-                return (
-                  <button
-                    key={option}
-                    onClick={() => handleAnswerSelect(letter)}
-                    disabled={!!selectedAnswer || loading || questionTransitioning}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
-                      isSelected
-                        ? isCorrectOption
-                          ? "border-green-500 bg-green-50 hover:border-green-600"
-                          : "border-red-500 bg-red-50 hover:border-red-600"
-                        : "border-gray-200 hover:border-blue-300 hover:bg-blue-50/30"
-                    } ${selectedAnswer && !isSelected ? "opacity-40 cursor-not-allowed" : ""} ${loading ? "opacity-60 cursor-wait" : ""}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${
-                        isSelected
-                          ? isCorrectOption
-                            ? "border-green-600 bg-green-600 text-white"
-                            : "border-red-600 bg-red-600 text-white"
-                          : "border-gray-300 hover:border-blue-400"
-                      }`}>
-                        {letter}
-                      </div>
-                      <span className="flex-1 font-medium">{getOptionText(option)}</span>
-                      {showFeedback && isSelected && (
-                        <div className="ml-2 animate-fade-in">
-                          {isCorrect ? (
-                            <CheckCircle className="h-6 w-6 text-green-600" />
-                          ) : (
-                            <XCircle className="h-6 w-6 text-red-600" />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
+      <CardContent>
+        {fadeState === 'in' && (
+          <div className="space-y-6">
+            {/* Question */}
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <p className="text-lg leading-relaxed whitespace-pre-line">
+                {currentQuestion.question_text}
+              </p>
             </div>
 
-            {/* Feedback Section - Always visible when answer is selected */}
-            {showFeedback && feedback && !loading && (
-              <div className={`mt-6 p-5 rounded-lg border-2 animate-slide-up ${
-                isCorrect
-                  ? "bg-green-50 border-green-200"
-                  : "bg-orange-50 border-orange-200"
-              }`}>
+            {/* Options */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {currentQuestion.options.map((option, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => !selectedAnswer && handleAnswerSelect(option)}
+                  className={getOptionClass(option)}
+                  disabled={!!selectedAnswer || questionTransitioning}
+                >
+                  <span className="font-bold text-lg mr-3">
+                    {getOptionLabel(option)})
+                  </span>
+                  <span>{option.slice(2).trim()}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Feedback */}
+            {showFeedback && feedback && (
+              <div className={`p-6 rounded-lg ${isCorrect ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
                 <div className="flex items-start gap-3">
                   {isCorrect ? (
-                    <CheckCircle className="h-6 w-6 text-green-600 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="h-6 w-6 text-green-600 mt-1 flex-shrink-0" />
                   ) : (
-                    <XCircle className="h-6 w-6 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <XCircle className="h-6 w-6 text-red-600 mt-1 flex-shrink-0" />
                   )}
-                  <div className="flex-1 space-y-3">
-                    <h4 className={`font-bold text-lg ${
-                      isCorrect ? "text-green-900" : "text-orange-900"
-                    }`}>
-                      {isCorrect ? "Chính xác! ✨" : "Chưa đúng 💪"}
-                    </h4>
-
-                    {/* Vietnamese Explanation */}
-                    {feedback.explanation_vn && (
-                      <div className="text-sm text-gray-800 leading-relaxed">
-                        <span className="font-semibold">Giải thích:</span> {feedback.explanation_vn}
-                      </div>
-                    )}
-
-                    {/* English Explanation (if different) */}
-                    {feedback.explanation_en && feedback.explanation_en !== feedback.explanation_vn && (
-                      <div className="text-sm text-gray-600 leading-relaxed border-t pt-2 mt-2">
-                        <span className="font-semibold text-gray-500">Explanation:</span> {feedback.explanation_en}
-                      </div>
-                    )}
-
-                    {/* Grammar Rule */}
-                    {feedback.grammar_rule && (
-                      <div className="mt-3 p-3 bg-white rounded-lg border">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                          📚 Grammar Rule
-                        </p>
-                        <p className="text-sm text-gray-800 leading-relaxed">
-                          {feedback.grammar_rule}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Quick Recap for wrong answers */}
-                    {!isCorrect && feedback.recap_rule && (
-                      <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <p className="text-sm text-blue-900">
-                          <strong>🔄 Nhắc lại:</strong> {feedback.recap_rule}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Memory Hook (if available) */}
-                    {feedback.memory_hook && (
-                      <div className="mt-2 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                        <p className="text-sm text-purple-900">
-                          <strong>💡 Mẹo nhớ:</strong> {feedback.memory_hook}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Prominent Next Question Button */}
-                    <Button
-                      onClick={handleNext}
-                      disabled={questionTransitioning}
-                      className="mt-4 w-full sm:w-auto min-w-[180px] font-semibold"
-                      size="lg"
-                    >
-                      {currentQuestionIndex < test.questions.length - 1 ? (
-                        <>
-                          Next Question
-                          <ArrowRight className="ml-2 h-5 w-5" />
-                        </>
-                      ) : (
-                        "See Results 🎉"
-                      )}
-                    </Button>
-
-                    {/* Keyboard hint */}
-                    <p className="text-xs text-gray-500 text-center mt-2">
-                      Press <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-gray-700 font-mono">Enter</kbd> or <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-gray-700 font-mono">Space</kbd> to continue
+                  <div className="flex-1">
+                    <h3 className={`text-lg font-semibold mb-2 ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>
+                      {isCorrect ? 'Chính xác!' : 'Chưa chính xác'}
+                    </h3>
+                    <p className="text-gray-700 mb-2">
+                      {feedback.explanation_vn || feedback.explanation_en}
                     </p>
+                    {feedback.grammar_rule && (
+                      <p className="text-sm text-gray-600 italic">
+                        Grammar: {feedback.grammar_rule}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Loading State */}
-            {loading && (
-              <div className="mt-6 flex flex-col items-center justify-center p-6 space-y-3">
-                <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent" />
-                <div className="text-center space-y-1">
-                  <p className="text-gray-800 font-medium">AI is analyzing your answer...</p>
-                  <p className="text-sm text-gray-500">Preparing personalized feedback</p>
-                </div>
+            {/* Navigation */}
+            {showFeedback && (
+              <div className="flex justify-between items-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={onCancel}
+                  className="text-gray-600"
+                >
+                  End Test
+                </Button>
+
+                {currentQuestionIndex < test.questions.length - 1 ? (
+                  <Button
+                    onClick={handleNext}
+                    disabled={questionTransitioning}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {questionTransitioning ? 'Loading...' : 'Next Question'}
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={questionTransitioning}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {loading ? 'Submitting...' : 'Submit Test'}
+                    <CheckCircle className="ml-2 h-5 w-5" />
+                  </Button>
+                )}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        )}
+      </CardContent>
 
-      {/* Navigation hint at bottom */}
-      {!showFeedback && !selectedAnswer && (
-        <div className="text-center text-sm text-gray-500">
-          Select an answer to see AI-powered feedback
-        </div>
-      )}
-    </div>
+      <style jsx>{`
+        .option-btn {
+          padding: 1rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 0.5rem;
+          text-align: left;
+          transition: all 0.2s;
+          background: white;
+          cursor: pointer;
+        }
+
+        .option-btn:hover:not(:disabled) {
+          border-color: #3b82f6;
+          background: #eff6ff;
+        }
+
+        .option-btn.selected {
+          border-color: #3b82f6;
+          background: #dbeafe;
+        }
+
+        .option-btn.correct {
+          border-color: #10b981;
+          background: #d1fae5;
+        }
+
+        .option-btn.incorrect {
+          border-color: #ef4444;
+          background: #fee2e2;
+        }
+
+        .option-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.7;
+        }
+      `}</style>
+    </Card>
   );
 }
