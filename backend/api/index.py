@@ -19,7 +19,6 @@ def handler(event, context):
     Forwards requests to the FastAPI application.
     """
     from mangum import Mangum
-    from aws_lambda_powertools import logger
 
     # Create an ASGI handler for FastAPI
     asgi_handler = Mangum(app, lifespan="off")
