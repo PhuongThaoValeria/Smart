@@ -7,13 +7,23 @@
     "frontend"
   ],
   "scripts": {
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
-    "build:frontend": "cd frontend && npm run build",
-    "install:all": "npm install && cd frontend && npm install"
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm run start",
+    "lint": "cd frontend && npm run lint"
   },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
-  }
+  },
+  "keywords": [
+    "english",
+    "learning",
+    "education",
+    "ai",
+    "vietnam",
+    "test-prep"
+  ],
+  "author": "Smart English Test-Prep Team",
+  "license": "MIT"
 }
