@@ -252,7 +252,11 @@ class FeedbackAgent:
     def __init__(self, db_connection: str):
         """Initialize the feedback agent."""
         self.config = get_config()
-        self.client = Anthropic(api_key=self.config.llm.anthropic_api_key)
+        # Use STEP_API_KEY if available, otherwise fall back to ANTHROPIC_API_KEY
+        api_key = self.config.llm.get_api_key()
+        if not api_key:
+            raise ValueError("No API key found. Please set STEP_API_KEY or ANTHROPIC_API_KEY")
+        self.client = Anthropic(api_key=api_key)
         self.analyzer = RootCauseAnalyzer(db_connection)
 
         # Database connection for question data

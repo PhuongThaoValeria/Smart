@@ -26,6 +26,8 @@ from psycopg2.extras import execute_values, RealDictCursor
 from pgvector.psycopg2 import register_vector
 from sentence_transformers import SentenceTransformer
 
+from app.config import get_config
+
 
 # =====================================================
 # DATA MODELS
@@ -83,7 +85,12 @@ class SyntheticQuestionGenerator:
     """
 
     def __init__(self):
-        self.client = Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+        config = get_config()
+        # Use STEP_API_KEY if available, otherwise fall back to ANTHROPIC_API_KEY
+        api_key = config.llm.get_api_key()
+        if not api_key:
+            raise ValueError("No API key found. Please set STEP_API_KEY or ANTHROPIC_API_KEY")
+        self.client = Anthropic(api_key=api_key)
         self.embedding_model = SentenceTransformer(
             'sentence-transformers/all-MiniLM-L6-v2'
         )

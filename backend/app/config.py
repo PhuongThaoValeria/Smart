@@ -50,10 +50,19 @@ class LLMConfig(BaseSettings):
     """LLM API configuration."""
 
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
+    step_api_key: str = Field(default="", alias="STEP_API_KEY")
     openai_api_key: Optional[str] = Field(default=None, alias="OPENAI_API_KEY")
     model: str = Field(default="claude-sonnet-4-20250514")
     temperature: float = Field(default=0.7)
     max_tokens: int = Field(default=4000)
+
+    def get_api_key(self) -> str:
+        """Get the first available API key in priority order."""
+        if self.step_api_key:
+            return self.step_api_key
+        if self.anthropic_api_key:
+            return self.anthropic_api_key
+        return ""
 
     class Config:
         env_file = ".env"

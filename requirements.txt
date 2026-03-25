@@ -1,3 +1,4 @@
 # Python requirements for Vercel deployment
-# This file is a symlink to backend/requirements.txt for Vercel's Python runtime
+# Vercel Python runtime requirements
 -a backend/requirements.txt
+mangum==0.17.0

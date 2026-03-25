@@ -29,6 +29,8 @@ import psycopg2
 from psycopg2.extras import execute_values
 from pgvector.psycopg2 import register_vector
 
+from app.config import get_config
+
 
 # =====================================================
 # DATA MODELS
@@ -83,7 +85,12 @@ class ExamPDFParser:
     """Parses Vietnamese high school English exam PDFs."""
 
     def __init__(self):
-        self.client = Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+        config = get_config()
+        # Use STEP_API_KEY if available, otherwise fall back to ANTHROPIC_API_KEY
+        api_key = config.llm.get_api_key()
+        if not api_key:
+            raise ValueError("No API key found. Please set STEP_API_KEY or ANTHROPIC_API_KEY")
+        self.client = Anthropic(api_key=api_key)
 
     def extract_text_from_pdf(self, pdf_path: str) -> str:
         """Extract raw text from PDF file."""
@@ -188,7 +195,12 @@ class TrendAnalyzer:
     """Analyzes exam patterns and generates trend reports."""
 
     def __init__(self):
-        self.client = Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+        config = get_config()
+        # Use STEP_API_KEY if available, otherwise fall back to ANTHROPIC_API_KEY
+        api_key = config.llm.get_api_key()
+        if not api_key:
+            raise ValueError("No API key found. Please set STEP_API_KEY or ANTHROPIC_API_KEY")
+        self.client = Anthropic(api_key=api_key)
 
     def analyze_topic_distribution(self, questions: List[ExamQuestion]) -> Dict[str, int]:
         """Analyze distribution of topics in the exam."""
