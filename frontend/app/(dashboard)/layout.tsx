@@ -1,3 +1,5 @@
+"use client";
+
 import { DashboardLayout } from "@/components/shared/dashboard-layout";
 
 export default function DashboardLayoutWrapper({
