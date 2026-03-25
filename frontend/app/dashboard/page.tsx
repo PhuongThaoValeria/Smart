@@ -70,7 +70,7 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/daily-test">
+            <Link href="/dashboard/daily-test">
               <Button className="w-full">Start Daily Test</Button>
             </Link>
           </CardContent>
@@ -84,7 +84,7 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/analytics">
+            <Link href="/dashboard/analytics">
               <Button variant="outline" className="w-full">
                 View Analytics
               </Button>

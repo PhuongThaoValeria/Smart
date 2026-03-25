@@ -11,10 +11,10 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Daily Test", href: "/daily-test", icon: BookOpen },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Counseling", href: "/counseling", icon: GraduationCap },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Daily Test", href: "/dashboard/daily-test", icon: BookOpen },
+  { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { name: "Counseling", href: "/dashboard/counseling", icon: GraduationCap },
 ];
 
 export function Sidebar() {
