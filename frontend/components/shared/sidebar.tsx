@@ -3,55 +3,59 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  BookOpen,
-  BarChart3,
-  GraduationCap,
-  LayoutDashboard,
-} from "lucide-react";
+import { GraduationCap } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Daily Test", href: "/dashboard/daily-test", icon: BookOpen },
-  { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { name: "Counseling", href: "/dashboard/counseling", icon: GraduationCap },
+  { name: "Dashboard", href: "/dashboard" },
+  { name: "Daily Test", href: "/dashboard/daily-test" },
+  { name: "Analytics", href: "/dashboard/analytics" },
+  { name: "Counseling", href: "/dashboard/counseling" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full w-64 flex-col bg-gray-900">
-      <div className="flex h-16 items-center justify-center border-b border-gray-800">
-        <h1 className="text-xl font-bold text-white">English Test-Prep</h1>
-      </div>
-
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {navigation.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              )}
-            >
-              <item.icon className="mr-3 h-5 w-5" />
-              {item.name}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="border-t border-gray-800 p-3">
-        <div className="text-xs text-gray-400 text-center">
-          Guest Mode - No Login Required
+    <div className="flex h-full w-80 flex-col bg-midnight-800 border-r border-midnight-700">
+      {/* Logo */}
+      <div className="flex h-20 items-center px-8 border-b border-midnight-700">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
+            <GraduationCap className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-display font-bold text-white tracking-tight">
+              English Test-Prep
+            </h1>
+          </div>
         </div>
       </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-6 py-8">
+        <div className="space-y-1">
+          {navigation.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  "relative flex items-center px-4 py-3.5 text-base font-sans font-medium transition-all duration-200 group",
+                  isActive
+                    ? "text-white"
+                    : "text-midnight-300 hover:text-white"
+                )}
+              >
+                <span className="flex-1">{item.name}</span>
+                {isActive && (
+                  <span className="absolute left-0 w-1 h-8 bg-gradient-to-b from-primary-400 to-primary-600 rounded-full shadow-lg shadow-primary-500/50" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }
