@@ -47,9 +47,9 @@ export function Sidebar() {
                     : "text-midnight-300 hover:text-white"
                 )}
               >
-                <span className="flex-1">{item.name}</span>
+                {item.name}
                 {isActive && (
-                  <span className="absolute left-0 w-1 h-8 bg-gradient-to-b from-primary-400 to-primary-600 rounded-full shadow-lg shadow-primary-500/50" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-primary-500 rounded-full shadow-lg shadow-primary-500/60 animate-pulse" />
                 )}
               </Link>
             );
